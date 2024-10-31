@@ -1,8 +1,8 @@
-// src/components/MessMenuTracker.js
 import React, { useState, useEffect } from 'react';
 import { read } from 'xlsx';
 import { MealCard } from './MealCard';
 import { parseExcelData } from '../utils/parseExcelData';
+import { motion } from 'framer-motion';
 
 const getDayOfWeek = () => {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -24,11 +24,10 @@ const MessMenuTracker = () => {
         const menus = {};
 
         for (const mess of messFiles) {
-          console.log(`Fetching menu for ${mess}...`);
           try {
             const response = await fetch(`/data/${mess}.xlsx`);
             if (!response.ok) {
-              throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+              throw new Error(`HTTP error ${response.status}`);
             }
             const arrayBuffer = await response.arrayBuffer();
             const workbook = read(arrayBuffer);
@@ -37,9 +36,10 @@ const MessMenuTracker = () => {
           } catch (messError) {
             console.error(`Error loading ${mess} menu:`, messError);
             menus[mess] = {
-              breakfast: { sunday: ['Menu not available'], monday: ['Menu not available'], tuesday: ['Menu not available'], wednesday: ['Menu not available'], thursday: ['Menu not available'], friday: ['Menu not available'], saturday: ['Menu not available'] },
-              lunch: { sunday: ['Menu not available'], monday: ['Menu not available'], tuesday: ['Menu not available'], wednesday: ['Menu not available'], thursday: ['Menu not available'], friday: ['Menu not available'], saturday: ['Menu not available'] },
-              dinner: { sunday: ['Menu not available'], monday: ['Menu not available'], tuesday: ['Menu not available'], wednesday: ['Menu not available'], thursday: ['Menu not available'], friday: ['Menu not available'], saturday: ['Menu not available'] }
+              breakfast: { [selectedDay.toLowerCase()]: ['Menu not available'] },
+              lunch: { [selectedDay.toLowerCase()]: ['Menu not available'] },
+              snacks: { [selectedDay.toLowerCase()]: ['Menu not available'] },
+              dinner: { [selectedDay.toLowerCase()]: ['Menu not available'] }
             };
           }
         }
@@ -62,84 +62,92 @@ const MessMenuTracker = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const getCurrentMenuItems = (menu) => {
+    const dayKey = selectedDay.toLowerCase();
+    return {
+      breakfast: menu.breakfast[dayKey] || ['Menu not available'],
+      lunch: menu.lunch[dayKey] || ['Menu not available'],
+      snacks: menu.snacks[dayKey] || ['Menu not available'],
+      dinner: menu.dinner[dayKey] || ['Menu not available']
+    };
+  };
+
   if (loading) {
-    return <div className="text-center p-4">Loading menu data...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
+        <div className="bg-white p-8 rounded-lg shadow-xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mx-auto"></div>
+          <p className="text-xl mt-4 text-gray-700">Loading menu data...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center p-4 text-red-500">Error: {error}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-red-500 to-pink-600">
+        <div className="bg-white p-8 rounded-lg shadow-xl">
+          <p className="text-xl text-red-500">Error: {error}</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleDayChange = (event) => {
-    setSelectedDay(event.target.value);
-  };
-
-  const handleMessChange = (event) => {
-    setSelectedMess(event.target.value);
-  };
-
-  const getCurrentMenuItems = (menu) => {
-    const dayKey = selectedDay.toLowerCase();
-    return [
-      menu.breakfast[dayKey] || ['Menu not available'],
-      menu.lunch[dayKey] || ['Menu not available'],
-      menu.dinner[dayKey] || ['Menu not available']
-    ];
-  };
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-center mb-4">IIIT-H Mess Menu</h1>
-      <p className="text-center mb-6">Current time: {currentTime.toLocaleTimeString()}</p>
-
-      <div className="flex justify-center mb-4">
-        <label htmlFor="day-select" className="mr-2">
-          Select Day:
-        </label>
-        <select
-          id="day-select"
-          value={selectedDay}
-          onChange={handleDayChange}
-          className="px-2 py-1 rounded border border-gray-300"
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
         >
-          <option value="Sunday">Sunday</option>
-          <option value="Monday">Monday</option>
-          <option value="Tuesday">Tuesday</option>
-          <option value="Wednesday">Wednesday</option>
-          <option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option>
-          <option value="Saturday">Saturday</option>
-        </select>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">IIIT-H Mess Menu</h1>
+          <p className="text-lg text-gray-600">
+            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </motion.div>
 
-        <label htmlFor="mess-select" className="ml-4 mr-2">
-          Select Mess:
-        </label>
-        <select
-          id="mess-select"
-          value={selectedMess}
-          onChange={handleMessChange}
-          className="px-2 py-1 rounded border border-gray-300"
-        >
-          <option value="">Select Mess</option>
-          <option value="yuktahaar">Yuktahaar</option>
-          <option value="kadamba">Kadamba</option>
-          <option value="north">North</option>
-          <option value="south">South</option>
-        </select>
-      </div>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+          <select
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(e.target.value)}
+            className="px-4 py-2 rounded-lg border-2 border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+          >
+            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
 
-      {selectedMess && messMenus[selectedMess] && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {getCurrentMenuItems(messMenus[selectedMess]).map((items, index) => (
-            <MealCard
-              key={`${selectedMess}-${index}`}
-              messName={['Breakfast', 'Lunch', 'Dinner'][index]}
-              menuItems={items}
-              currentMeal={['BREAKFAST', 'LUNCH', 'DINNER'][index]}
-            />
-          ))}
+          <select
+            value={selectedMess}
+            onChange={(e) => setSelectedMess(e.target.value)}
+            className="px-4 py-2 rounded-lg border-2 border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+          >
+            <option value="">Select Mess</option>
+            <option value="yuktahaar">Yuktahaar</option>
+            <option value="kadamba">Kadamba</option>
+            <option value="north">North</option>
+            <option value="south">South</option>
+          </select>
         </div>
-      )}
+
+        {selectedMess && messMenus[selectedMess] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {Object.entries(getCurrentMenuItems(messMenus[selectedMess])).map(([meal, items]) => (
+              <MealCard
+                key={`${selectedMess}-${meal}`}
+                messName={meal.charAt(0).toUpperCase() + meal.slice(1)}
+                menuItems={items}
+                currentMeal={meal.toUpperCase()}
+              />
+            ))}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
