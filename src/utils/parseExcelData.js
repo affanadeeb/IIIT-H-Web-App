@@ -3,12 +3,12 @@ export const parseExcelData = (worksheet) => {
   const data = { breakfast: {}, lunch: {}, snacks: {}, dinner: {} };
   const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-  // Meal mapping to the rows (adjusted for your Excel layout)
+  // Meal mapping to the rows (adjust for your Excel layout)
   const mealRows = {
     breakfast: { start: 2, end: 6 }, // Rows for Breakfast
-    lunch: { start: 7, end: 13 },    // Rows for Lunch
-    snacks: { start: 14, end: 15 },  // Rows for Snacks
-    dinner: { start: 16, end: 22 }   // Rows for Dinner
+    lunch: { start: 7, end: 14 },    // Rows for Lunch
+    snacks: { start: 15, end: 16 },  // Rows for Snacks
+    dinner: { start: 17, end: 24 }   // Rows for Dinner
   };
 
   // Iterate over each day and extract data for each meal type
